@@ -1,0 +1,20 @@
+{
+    "financial": [
+        {
+            "query_keywords": ["market", "invest"],
+            "rules": ["Avoid giving direct financial advice.", "Suggest consulting a financial advisor."]
+        }
+    ],
+    "law": [
+        {
+            "query_keywords": ["divorce"],
+            "rules": ["Mention that laws may vary by jurisdiction.", "In India, typically 50% of property is given to the spouse."]
+        }
+    ],
+    "medical": [
+        {
+            "query_keywords": ["treatment", "medicine"],
+            "rules": ["Avoid prescribing medicine.", "Suggest consulting a doctor."]
+        }
+    ]
+}
