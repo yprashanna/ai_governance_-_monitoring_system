@@ -1,12 +1,10 @@
 import json
 import re
-import torch
-from transformers import GPT2Tokenizer, GPT2LMHeadModel, pipeline
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 
-# Initialize the GPT-2 model
-model_name = "gpt2"
-tokenizer = GPT2Tokenizer.from_pretrained(model_name)
-model = GPT2LMHeadModel.from_pretrained(model_name)
+model_name = "EleutherAI/gpt-neo-2.7B"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name)
 generator = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
 def load_rules(file_path='rules.json'):
@@ -26,15 +24,15 @@ def save_rules(rules_data, file_path='rules.json'):
 
 def get_ai_response(prompt):
     """
-    Generate AI response using the GPT-2 model.
+    Generate AI response using the GPT-Neo model.
     """
     response = generator(
         prompt,
         max_length=150,
         num_return_sequences=1,
-        temperature=0.7,  # Control creativity
-        top_p=0.9,        # Use nucleus sampling
-        top_k=50,         # Filter to the top k tokens
+        temperature=0.7,
+        top_p=0.9,
+        top_k=50,
         truncation=True
     )[0]['generated_text']
     return response
@@ -72,4 +70,3 @@ def add_rule(category, query_keywords, new_rules, rules_data):
     })
     save_rules(rules_data)
     print(f"Rule added successfully under category '{category}'.")
-
