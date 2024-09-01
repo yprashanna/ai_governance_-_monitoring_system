@@ -1,9 +1,18 @@
 import streamlit as st
+import json
+import os
 from model import load_rules, get_ai_response, check_response_against_rules, request_modified_response, add_rule
-import time
 
 # Load rules from the JSON file
-rules_data = load_rules()
+def load_rules_from_file():
+    with open('rules.json', 'r') as f:
+        return json.load(f)
+
+def save_rules_to_file(rules):
+    with open('rules.json', 'w') as f:
+        json.dump(rules, f, indent=4)
+
+rules_data = load_rules_from_file()
 
 # Set up the page configuration
 st.set_page_config(
@@ -141,27 +150,62 @@ with st.sidebar:
     st.subheader("Select the domain you want to train:")
     domain = st.selectbox("", ["Finance", "Law", "Medical"])
 
+    # Initialize session states for trainer inputs
+    if 'logged_in' not in st.session_state:
+        st.session_state.logged_in = False
+    if 'user_id' not in st.session_state:
+        st.session_state.user_id = ""
+    if 'password' not in st.session_state:
+        st.session_state.password = ""
+    if 'query_keywords' not in st.session_state:
+        st.session_state.query_keywords = ""
+    if 'rules_list' not in st.session_state:
+        st.session_state.rules_list = ""
+
     # User authentication
-    user_id = st.text_input("User ID", type="default")
-    password = st.text_input("Password", type="password")
+    if not st.session_state.logged_in:
+        st.session_state.user_id = st.text_input("User ID", type="default")
+        st.session_state.password = st.text_input("Password", type="password")
 
-    if user_id and password:
         if st.button("Login"):
-            if (domain == "Finance" and user_id == "finance" and password == "financepass") or \
-               (domain == "Law" and user_id == "lawyer" and password == "lawyerpass") or \
-               (domain == "Medical" and user_id == "doctor" and password == "doctorpass"):
-                st.success(f"Welcome, {user_id}!")
-                st.subheader(f"Add new rules to the {domain} domain")
-                query_keywords = st.text_input("Query Keywords (comma-separated)")
-                rules_list = st.text_area("Rules (separated by semicolon ';')")
-
-                if st.button("Add Rule"):
-                    if query_keywords.strip() == "" or rules_list.strip() == "":
-                        st.warning("Please provide both query keywords and rules before adding.")
-                    else:
-                        query_keywords_list = [kw.strip() for kw in query_keywords.split(',')]
-                        new_rules = [rule.strip() for rule in rules_list.split(';')]
-                        add_rule(domain.lower(), query_keywords_list, new_rules, rules_data)
-                        st.success(f"New rules added under the {domain} domain.")
+            if (domain == "Finance" and st.session_state.user_id == "finance" and st.session_state.password == "financepass") or \
+               (domain == "Law" and st.session_state.user_id == "lawyer" and st.session_state.password == "lawyerpass") or \
+               (domain == "Medical" and st.session_state.user_id == "doctor" and st.session_state.password == "doctorpass"):
+                st.success(f"Welcome, {st.session_state.user_id}!")
+                st.session_state.logged_in = True
             else:
                 st.error("Invalid User ID or Password")
+    else:
+        st.subheader(f"Add new rules to the {domain} domain")
+
+        # Maintain input values using session state
+        st.session_state.query_keywords = st.text_input(
+            "Query Keywords (comma-separated)", 
+            value=st.session_state.query_keywords
+        )
+        
+        st.session_state.rules_list = st.text_area(
+            "Rules (separated by semicolon ';')", 
+            value=st.session_state.rules_list
+        )
+
+        if st.button("Add Rule"):
+            if st.session_state.query_keywords.strip() == "" or st.session_state.rules_list.strip() == "":
+                st.warning("Please provide both query keywords and rules before adding.")
+            else:
+                query_keywords_list = [kw.strip() for kw in st.session_state.query_keywords.split(',')]
+                new_rules = [rule.strip() for rule in st.session_state.rules_list.split(';')]
+
+                # Add rule to rules_data and save it to the JSON file
+                add_rule(domain.lower(), query_keywords_list, new_rules, rules_data)
+                save_rules_to_file(rules_data)
+                st.success(f"New rules added under the {domain} domain.")
+
+                # Clear input fields after successful addition
+                st.session_state.query_keywords = ""
+                st.session_state.rules_list = ""
+        
+        if st.button("Logout"):
+            st.session_state.logged_in = False
+            st.session_state.user_id = ""
+            st.session_state.password = ""
